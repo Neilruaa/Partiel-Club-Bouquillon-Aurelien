@@ -47,4 +47,27 @@ class Club:
         return booking
 
     def load_bookings_from_api(self) -> None:
-        pass
+        from api.reservations import fetch_reservations
+        
+        for sport in ["tennis", "badminton", "squash"]:
+            data = fetch_reservations(sport)
+            if not data:
+                continue
+                
+            for line in data.strip().split("\n"):
+                if not line:
+                    continue
+                parts = line.split(",")
+                if len(parts) != 3:
+                    continue
+                    
+                time_str, sport_type, room_id = parts
+                start_time = datetime.fromisoformat(time_str)
+                member = Member("API_User", 0.0) 
+                
+                room = next((r for r in self.rooms if r.room_id == room_id), None)
+                if room and room.has_capacity() and room.is_available:
+                    room.members.append(member)
+                    booking = Booking(member, room, start_time)
+                    booking.price = 0.0 
+                    self.bookings.append(booking)
